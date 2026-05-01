@@ -1,0 +1,1 @@
+console.info("Setil content script injected.");
