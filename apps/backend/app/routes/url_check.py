@@ -5,11 +5,11 @@ from typing import Annotated
 router = APIRouter()
 
 
-@router.get("/", response_model=PhishingUrlCheckResponse)
-def url_check_root(data: Annotated[PhishingUrlCheckRequest, Query()]) -> dict[str, str]:
-    url = data.url.lower()
+@router.get("/check-url", response_model=PhishingUrlCheckResponse)
+def url_check_root(query: Annotated[PhishingUrlCheckRequest, Query()]) -> dict[str, str]:
+    url = query.url.lower()
 
-    suspicious_keywords = ["login", "verify", "secure", "update", "banking"]
+    suspicious_keywords = ["verify", "secure", "update", "banking"]
     is_suspicious = any(keyword in url for keyword in suspicious_keywords)
 
     if "g00gle" in url or "faceboook" in url:

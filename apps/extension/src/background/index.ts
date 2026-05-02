@@ -1,6 +1,12 @@
 import { ensureDefaultFeatureSettings } from "../settings";
 import { ensureDefaultFeatureStats } from "../stats";
 
+import "./phishing";
+import "./downloads";
+import "./passwords";
+import "./permissions";
+import "./tracking";
+
 const initializeFeatureSettings = async () => {
   await ensureDefaultFeatureSettings();
   await ensureDefaultFeatureStats();
