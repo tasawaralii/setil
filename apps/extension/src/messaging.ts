@@ -21,6 +21,15 @@ export type ScanningDownloadMessage = {
   };
 };
 
+export type DownloadResultMessage = {
+  type: "DOWNLOAD_RESULT";
+  payload: {
+    status: "scanning" | "safe" | "malicious" | "error";
+    filename?: string;
+    reason?: string;
+  };
+};
+
 export type LogPermissionUseMessage = {
   type: "LOG_PERMISSION_USE";
   payload: {
@@ -40,6 +49,7 @@ export type ExtensionMessage =
   | BlockPageMessage
   | SaveCredentialsMessage
   | ScanningDownloadMessage
+  | DownloadResultMessage
   | LogPermissionUseMessage
   | TrackingStrippedMessage;
 

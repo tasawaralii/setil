@@ -6,6 +6,7 @@ import {
   type FeatureKey,
   type FeatureSettings,
   updateFeatureSetting,
+  updateVirusTotalApiKey,
   FEATURE_SETTINGS_STORAGE_KEY
 } from "../settings";
 import { card } from "./style";
@@ -159,39 +160,63 @@ export function FeatureTogglePanel() {
     }
   };
 
+  const handleApiKeyChange = async (apiKey: string) => {
+    const nextSettings = await updateVirusTotalApiKey(apiKey);
+    setSettings(nextSettings);
+  };
+
   return (
-
     <section style={card}>
+      <div style={panelStyles.list}>
+        {featureDefinitions.map((feature) => {
+          const checked = settings?.[feature.key] ?? false;
+          const isSaving = isSavingKey === feature.key;
 
-          <div style={panelStyles.list}>
-            {featureDefinitions.map((feature) => {
-              const checked = settings?.[feature.key] ?? false;
-              const isSaving = isSavingKey === feature.key;
+          return (
+            <label key={feature.key} style={panelStyles.item}>
+              <div style={panelStyles.labelGroup}>
+                <p style={panelStyles.label}>{feature.label}</p>
+              </div>
 
-              return (
-                <label key={feature.key} style={panelStyles.item}>
-                  <div style={panelStyles.labelGroup}>
-                    <p style={panelStyles.label}>{feature.label}</p>
-                  </div>
+              <span style={panelStyles.switch}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={isSaving}
+                  onChange={(event) => {
+                    void handleToggle(feature.key, event.target.checked);
+                  }}
+                  style={panelStyles.input}
+                  aria-label={`${feature.label} toggle`}
+                />
+                <span style={panelStyles.track(checked)} />
+                <span style={panelStyles.thumb(checked)} />
+              </span>
+            </label>
+          );
+        })}
 
-                  <span style={panelStyles.switch}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={isSaving}
-                      onChange={(event) => {
-                        void handleToggle(feature.key, event.target.checked);
-                      }}
-                      style={panelStyles.input}
-                      aria-label={`${feature.label} toggle`}
-                    />
-                    <span style={panelStyles.track(checked)} />
-                    <span style={panelStyles.thumb(checked)} />
-                  </span>
-                </label>
-              );
-            })}
+        <div style={{ ...panelStyles.item, borderBottom: "none", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+          <div style={panelStyles.labelGroup}>
+            <p style={panelStyles.label}>VirusTotal API Key</p>
+            <p style={panelStyles.description}>Required for download scanning. Using your own key is recommended.</p>
           </div>
-        </section>
+          <input
+            type="password"
+            value={settings?.virusTotalApiKey || ""}
+            onChange={(e) => void handleApiKeyChange(e.target.value)}
+            placeholder="Enter your VT API key"
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: 6,
+              border: "1px solid #cbd5e1",
+              fontSize: 13,
+              fontFamily: "monospace"
+            }}
+          />
+        </div>
+      </div>
+    </section>
   );
-}
+  }

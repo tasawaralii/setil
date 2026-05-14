@@ -7,7 +7,9 @@ export type FeatureKey =
   | "permissionManager"
   | "trackingPrevention";
 
-export type FeatureSettings = Record<FeatureKey, boolean>;
+export type FeatureSettings = Record<FeatureKey, boolean> & {
+  virusTotalApiKey?: string;
+};
 
 export type FeatureDefinition = {
   key: FeatureKey;
@@ -48,7 +50,8 @@ export const defaultFeatureSettings: FeatureSettings = {
   downloadScanner: true,
   passwordManager: true,
   permissionManager: true,
-  trackingPrevention: true
+  trackingPrevention: true,
+  virusTotalApiKey: ""
 };
 
 export const normalizeFeatureSettings = (
@@ -82,6 +85,22 @@ export const updateFeatureSetting = async (
   const nextSettings = {
     ...currentSettings,
     [key]: enabled
+  };
+
+  await chrome.storage.local.set({
+    [FEATURE_SETTINGS_STORAGE_KEY]: nextSettings
+  });
+
+  return nextSettings;
+};
+
+export const updateVirusTotalApiKey = async (
+  apiKey: string
+): Promise<FeatureSettings> => {
+  const currentSettings = await getFeatureSettings();
+  const nextSettings = {
+    ...currentSettings,
+    virusTotalApiKey: apiKey
   };
 
   await chrome.storage.local.set({
