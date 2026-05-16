@@ -3,6 +3,7 @@ export const FEATURE_STATS_STORAGE_KEY = "featureStats";
 export type StatKey =
   | "phishingSitesBlocked"
   | "filesScanned"
+  | "maliciousDownloadsBlocked"
   | "passwordsProtected"
   | "permissionsBlocked"
   | "trackersBlocked";
@@ -18,6 +19,7 @@ export type FeatureStats = Record<StatKey, number>;
 export const defaultFeatureStats: FeatureStats = {
   phishingSitesBlocked: 0,
   filesScanned: 0,
+  maliciousDownloadsBlocked: 0,
   passwordsProtected: 0,
   permissionsBlocked: 0,
   trackersBlocked: 0

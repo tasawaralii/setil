@@ -6,7 +6,7 @@
     "dev": "pnpm dev:extension",
     "dev:extension": "pnpm --filter @setil/extension dev",
     "build": "pnpm --filter @setil/extension build",
-    "dev:backend": "python -m uvicorn api.index:app --reload --app-dir apps/backend",
+    "dev:backend": "uv run uvicorn app.main:app --reload --app-dir apps/backend",
     "lint": "pnpm --filter @setil/extension lint"
   }
 }

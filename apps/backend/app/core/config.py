@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     neon_database_url: str = Field(default="", validation_alias="NEON_DATABASE_URL")
     jwt_secret: str = Field(default="change-me", validation_alias="JWT_SECRET")
+    virustotal_api_key: str = Field(default="", validation_alias="VIRUSTOTAL_API_KEY")
 
 
 @lru_cache
