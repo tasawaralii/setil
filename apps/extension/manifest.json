@@ -17,7 +17,22 @@
     "type": "module"
   },
   "options_page": "src/options/index.html",
-  "permissions": ["storage", "scripting", "tabs", "downloads"],
+  "permissions": [
+    "storage",
+    "scripting",
+    "tabs",
+    "downloads",
+    "declarativeNetRequest"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "tracking_rules",
+        "enabled": true,
+        "path": "src/rules.json"
+      }
+    ]
+  },
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {

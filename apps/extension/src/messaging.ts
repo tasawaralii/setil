@@ -45,22 +45,32 @@ export type TrackingStrippedMessage = {
   };
 };
 
+export type TrackingScriptsDetectedMessage = {
+  type: "TRACKING_SCRIPTS_DETECTED";
+  payload: {
+    scripts: string[];
+    pageUrl: string;
+    timestamp: string;
+  };
+};
+
 export type ExtensionMessage =
   | BlockPageMessage
   | SaveCredentialsMessage
   | ScanningDownloadMessage
   | DownloadResultMessage
   | LogPermissionUseMessage
-  | TrackingStrippedMessage;
+  | TrackingStrippedMessage
+  | TrackingScriptsDetectedMessage;
 
 export const isMessageType = <T extends ExtensionMessage["type"]>(
   message: unknown,
-  type: T
+  type: T,
 ): message is Extract<ExtensionMessage, { type: T }> => {
   return Boolean(
     message &&
-      typeof message === "object" &&
-      "type" in message &&
-      (message as ExtensionMessage).type === type
+    typeof message === "object" &&
+    "type" in message &&
+    (message as ExtensionMessage).type === type,
   );
 };
