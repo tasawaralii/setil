@@ -22,7 +22,8 @@
     "scripting",
     "tabs",
     "downloads",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback"
   ],
   "declarative_net_request": {
     "rule_resources": [
@@ -38,7 +39,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content/index.ts"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
   "icons": {
