@@ -2,56 +2,100 @@
   {
     "id": 1,
     "priority": 1,
-    "action": {
-      "type": "block"
-    },
+    "action": { "type": "block" },
     "condition": {
       "urlFilter": "||google-analytics.com",
-      "resourceTypes": ["script", "xhr", "fetch"]
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
     }
   },
   {
     "id": 2,
     "priority": 1,
-    "action": {
-      "type": "block"
-    },
+    "action": { "type": "block" },
     "condition": {
       "urlFilter": "||googletagmanager.com",
-      "resourceTypes": ["script", "xhr", "fetch"]
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
     }
   },
   {
     "id": 3,
     "priority": 1,
-    "action": {
-      "type": "block"
-    },
+    "action": { "type": "block" },
     "condition": {
       "urlFilter": "||connect.facebook.net",
-      "resourceTypes": ["script", "xhr", "fetch"]
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
     }
   },
   {
     "id": 4,
     "priority": 1,
-    "action": {
-      "type": "block"
-    },
+    "action": { "type": "block" },
     "condition": {
       "urlFilter": "||mixpanel.com",
-      "resourceTypes": ["script", "xhr", "fetch"]
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
     }
   },
   {
     "id": 5,
     "priority": 1,
-    "action": {
-      "type": "block"
-    },
+    "action": { "type": "block" },
     "condition": {
       "urlFilter": "||segment.io",
-      "resourceTypes": ["script", "xhr", "fetch"]
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||segment.com",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||hotjar.com",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 8,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||fullstory.com",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 9,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||intercom.io",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 10,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||api.amplitude.com",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||amplitude.com",
+      "resourceTypes": ["script", "xmlhttprequest", "ping"]
     }
   }
 ]
