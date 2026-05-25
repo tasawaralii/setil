@@ -42,6 +42,8 @@ export type TrackingStrippedMessage = {
   type: "TRACKING_STRIPPED";
   payload: {
     url: string;
+    removedParams: string[];
+    originalUrl: string;
   };
 };
 

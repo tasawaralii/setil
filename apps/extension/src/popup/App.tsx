@@ -1,6 +1,12 @@
 import { FeatureTogglePanel } from "../ui/FeatureTogglePanel";
 import GlobalTogglePanel from "../ui/GlobalTogglePanel";
 import { page, shell } from "../ui/style";
+import { useEffect, useState } from "react";
+
+interface BlockedDomain {
+  count: number;
+  lastBlocked: string;
+}
 
 const headerStyles = {
   bar: {
@@ -14,24 +20,24 @@ const headerStyles = {
     background: "rgba(255, 255, 255, 0.92)",
     border: "1px solid rgba(148, 163, 184, 0.2)",
     boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
-    backdropFilter: "blur(14px)"
+    backdropFilter: "blur(14px)",
   } as React.CSSProperties,
   brand: {
     display: "flex",
     alignItems: "center",
     gap: 10,
-    minWidth: 0
+    minWidth: 0,
   } as React.CSSProperties,
   icon: {
     width: 28,
     height: 28,
     flexShrink: 0,
-    display: "block"
+    display: "block",
   } as React.CSSProperties,
   logo: {
     width: 80,
     height: "auto",
-    display: "block"
+    display: "block",
   } as React.CSSProperties,
   accountButton: {
     display: "inline-flex",
@@ -44,14 +50,146 @@ const headerStyles = {
     background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)",
     color: "#2563eb",
     cursor: "pointer",
-    flexShrink: 0
+    flexShrink: 0,
   } as React.CSSProperties,
   accountIcon: {
     width: 18,
     height: 18,
-    display: "block"
-  } as React.CSSProperties
+    display: "block",
+  } as React.CSSProperties,
 };
+
+const trackingStatsStyles = {
+  container: {
+    padding: "12px",
+    borderRadius: "8px",
+    background: "rgba(59, 130, 246, 0.05)",
+    border: "1px solid rgba(59, 130, 246, 0.2)",
+    marginBottom: "12px",
+  } as React.CSSProperties,
+  title: {
+    margin: "0 0 8px 0",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#1e293b",
+  } as React.CSSProperties,
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    marginBottom: "12px",
+  } as React.CSSProperties,
+  statBox: {
+    padding: "8px",
+    borderRadius: "6px",
+    background: "white",
+    border: "1px solid #e2e8f0",
+    textAlign: "center" as const,
+  } as React.CSSProperties,
+  statValue: {
+    fontSize: "18px",
+    fontWeight: "bold",
+    color: "#3b82f6",
+  } as React.CSSProperties,
+  statLabel: {
+    fontSize: "11px",
+    color: "#64748b",
+    marginTop: "4px",
+  } as React.CSSProperties,
+  domainList: {
+    fontSize: "12px",
+  } as React.CSSProperties,
+  domainTitle: {
+    fontWeight: "600",
+    marginBottom: "6px",
+    color: "#1e293b",
+  } as React.CSSProperties,
+  domainItem: {
+    fontSize: "11px",
+    color: "#475569",
+    marginBottom: "4px",
+    paddingLeft: "8px",
+  } as React.CSSProperties,
+};
+
+function TrackingStats() {
+  const [stats, setStats] = useState({
+    totalBlocked: 0,
+    currentSiteCount: 0,
+    recentDomains: [] as string[],
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const featureStats = await chrome.storage.local.get("featureStats");
+        const blockedDomains = await chrome.storage.local.get("blockedDomains");
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const currentUrl = tabs[0]?.url || "";
+        const currentHostname = currentUrl
+          ? new URL(currentUrl).hostname
+          : "unknown";
+
+        const stats = featureStats.featureStats || {};
+        const domains =
+          (blockedDomains.blockedDomains as Record<string, BlockedDomain>) ||
+          {};
+
+        const topDomains = Object.entries(domains)
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, 5);
+
+        const recentDomains = topDomains.map(([domain]) => domain);
+        const currentSiteCount = domains[currentHostname]?.count || 0;
+
+        setStats({
+          totalBlocked: stats.trackersBlocked || 0,
+          currentSiteCount,
+          recentDomains,
+        });
+      } catch (error) {
+        console.warn("Failed to load tracking stats:", error);
+      }
+    };
+
+    void loadStats();
+  }, []);
+
+  return (
+    <div style={trackingStatsStyles.container}>
+      <h3 style={trackingStatsStyles.title}>🛡️ Tracking Prevention</h3>
+
+      <div style={trackingStatsStyles.statsGrid}>
+        <div style={trackingStatsStyles.statBox}>
+          <div style={trackingStatsStyles.statValue}>{stats.totalBlocked}</div>
+          <div style={trackingStatsStyles.statLabel}>Total Blocked</div>
+        </div>
+        <div style={trackingStatsStyles.statBox}>
+          <div style={trackingStatsStyles.statValue}>
+            {stats.currentSiteCount}
+          </div>
+          <div style={trackingStatsStyles.statLabel}>This Site</div>
+        </div>
+      </div>
+
+      {stats.recentDomains.length > 0 && (
+        <div style={trackingStatsStyles.domainList}>
+          <div style={trackingStatsStyles.domainTitle}>Recently Blocked:</div>
+          <ul style={{ margin: "0", paddingLeft: "16px" }}>
+            {stats.recentDomains.slice(0, 3).map((domain) => (
+              <li key={domain} style={trackingStatsStyles.domainItem}>
+                {domain}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function App() {
   return (
@@ -59,7 +197,11 @@ export function App() {
       <div style={shell}>
         <header style={headerStyles.bar}>
           <div style={headerStyles.brand}>
-            <img src="/icons/icon.png" alt="Setil icon" style={headerStyles.icon} />
+            <img
+              src="/icons/icon.png"
+              alt="Setil icon"
+              style={headerStyles.icon}
+            />
             <img src="/icons/logo.png" alt="Setil" style={headerStyles.logo} />
           </div>
 
@@ -90,6 +232,7 @@ export function App() {
         </header>
 
         <GlobalTogglePanel />
+        <TrackingStats />
         <FeatureTogglePanel />
       </div>
     </main>
