@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.schemas.index import DownloadCheckRequest, DownloadCheckResponse
-from app.core.database import Settings, get_settings, get_db
+from app.core.database import get_db
+from app.core.config import Settings, get_settings
 from sqlalchemy.orm import Session
 from app.models.scan_cache import ScanCache
 import httpx

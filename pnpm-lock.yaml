@@ -8,6 +8,8 @@ importers:
 
   .: {}
 
+  apps/backend: {}
+
   apps/extension:
     dependencies:
       axios:
