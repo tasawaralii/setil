@@ -45,13 +45,27 @@ export type TrackingStrippedMessage = {
   };
 };
 
+export type GetCredentialsMessage = {
+  type: "GET_CREDS";
+  payload: {
+    origin: string;
+  };
+};
+
+export type GeneratePasswordMessage = {
+  type: "GENERATE_PASSWORD";
+  payload?: Record<string, never>;
+};
+
 export type ExtensionMessage =
   | BlockPageMessage
   | SaveCredentialsMessage
   | ScanningDownloadMessage
   | DownloadResultMessage
   | LogPermissionUseMessage
-  | TrackingStrippedMessage;
+  | TrackingStrippedMessage
+  | GetCredentialsMessage
+  | GeneratePasswordMessage;
 
 export const isMessageType = <T extends ExtensionMessage["type"]>(
   message: unknown,
