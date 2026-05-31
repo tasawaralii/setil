@@ -1,16 +1,9 @@
 import { incrementStat } from "../stats";
 import { getFeatureSettings } from "../settings";
-import { CheckDownloadUrl, CheckDownloadHash } from "../api";
+import { CheckDownloadUrl } from "../api";
+import { isMessageType } from "../messaging";
 
-async function calculateHash(blob: Blob): Promise<string> {
-  const arrayBuffer = await blob.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
-}
-
-async function notifyContentScript(status: "scanning" | "safe" | "malicious" | "error", filename?: string, reason?: string) {
+async function notifyContentScript(status: "scanning" | "safe" | "malicious" | "error", filename?: string, reason?: string, downloadId?: number) {
   // Try to notify the active tab in all windows to ensure the user sees it
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
@@ -18,7 +11,7 @@ async function notifyContentScript(status: "scanning" | "safe" | "malicious" | "
       try {
         await chrome.tabs.sendMessage(tab.id, {
           type: "DOWNLOAD_RESULT",
-          payload: { status, filename, reason }
+          payload: { status, filename, reason, downloadId }
         });
       } catch (e) {
         // Ignore errors for tabs that don't have our content script
@@ -26,6 +19,18 @@ async function notifyContentScript(status: "scanning" | "safe" | "malicious" | "
     }
   }
 }
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (isMessageType(message, "OVERRIDE_DOWNLOAD")) {
+    console.log("User overriding download block:", message.payload.downloadId);
+    chrome.downloads.resume(message.payload.downloadId);
+  }
+  
+  if (isMessageType(message, "CANCEL_DOWNLOAD")) {
+    console.log("User cancelling download:", message.payload.downloadId);
+    chrome.downloads.cancel(message.payload.downloadId);
+  }
+});
 
 chrome.downloads.onCreated.addListener((item) => {
   console.log("Download detected:", item.filename, item.url);
@@ -51,38 +56,17 @@ chrome.downloads.onCreated.addListener((item) => {
     await notifyContentScript("scanning", item.filename);
 
     try {
-      // 1. URL Check
-      console.log("Checking URL reputation...");
-      const urlResult = await CheckDownloadUrl(item.url, settings.virusTotalApiKey);
-      console.log("URL Check result:", urlResult);
+      // Perform comprehensive check via backend
+      // The backend now handles both URL reputation and hash-based scanning
+      console.log("Requesting backend to verify download...");
+      const scanResult = await CheckDownloadUrl(item.url, settings.virusTotalApiKey);
+      console.log("Scan result:", scanResult);
 
-      if (urlResult.status === "malicious") {
-        console.warn("MALICIOUS URL DETECTED. Cancelling download.");
-        await chrome.downloads.cancel(item.id);
+      if (scanResult.status === "malicious" || scanResult.status === "suspicious") {
+        console.warn("THREAT DETECTED. Waiting for user decision.", scanResult.reason);
+        // We don't cancel immediately anymore, we let the user decide via the toast
         await incrementStat("maliciousDownloadsBlocked");
-        await notifyContentScript("malicious", item.filename, urlResult.reason || "Malicious URL detected");
-        return;
-      }
-
-      // 2. Hash Check
-      console.log("Fetching file bytes for hash check...");
-      const response = await fetch(item.url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file for hashing: ${response.statusText}`);
-      }
-      
-      const blob = await response.blob();
-      const hash = await calculateHash(blob);
-      console.log("Computed SHA-256 hash:", hash);
-      
-      const hashResult = await CheckDownloadHash(hash, settings.virusTotalApiKey);
-      console.log("Hash Check result:", hashResult);
-
-      if (hashResult.status === "malicious") {
-        console.warn("MALICIOUS HASH DETECTED. Cancelling download.");
-        await chrome.downloads.cancel(item.id);
-        await incrementStat("maliciousDownloadsBlocked");
-        await notifyContentScript("malicious", item.filename, hashResult.reason || "Malicious file content detected");
+        await notifyContentScript("malicious", item.filename, scanResult.reason || "Malicious file detected", item.id);
         return;
       }
 

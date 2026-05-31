@@ -27,6 +27,21 @@ export type DownloadResultMessage = {
     status: "scanning" | "safe" | "malicious" | "error";
     filename?: string;
     reason?: string;
+    downloadId?: number;
+  };
+};
+
+export type OverrideDownloadMessage = {
+  type: "OVERRIDE_DOWNLOAD";
+  payload: {
+    downloadId: number;
+  };
+};
+
+export type CancelDownloadMessage = {
+  type: "CANCEL_DOWNLOAD";
+  payload: {
+    downloadId: number;
   };
 };
 
@@ -73,6 +88,8 @@ export type ExtensionMessage =
   | SaveCredentialsMessage
   | ScanningDownloadMessage
   | DownloadResultMessage
+  | OverrideDownloadMessage
+  | CancelDownloadMessage
   | LogPermissionUseMessage
   | TrackingStrippedMessage
   | TrackingScriptsDetectedMessage

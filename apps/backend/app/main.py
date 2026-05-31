@@ -6,6 +6,10 @@ from app.routes.health import router as health_router
 from app.routes.passwords import router as passwords_router
 from app.routes.url_check import router as url_check_router
 from app.routes.downloads import router as downloads_router
+from app.core.database import engine
+from app.models import Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Setil API", version="0.0.0")
 
