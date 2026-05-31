@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.9.0",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "pnpm dev:extension",
     "dev:extension": "pnpm --filter @setil/extension dev",
     "build": "pnpm --filter @setil/extension build",
