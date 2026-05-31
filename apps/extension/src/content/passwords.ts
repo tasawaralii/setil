@@ -189,22 +189,34 @@ const attachPasswordField = (input: HTMLInputElement) => {
   handleAutofill(input, container);
 
   // 4. Form Submission Logic
+  let lastSaveTime = 0;
+  const saveCreds = () => {
+    if (!input.value) return;
+    const now = Date.now();
+    if (now - lastSaveTime < 1000) return;
+    lastSaveTime = now;
+    chrome.runtime.sendMessage({
+      type: "SAVE_CREDS",
+      payload: {
+        username: getUsernameValue(input),
+        password: input.value,
+        origin: location.origin
+      }
+    });
+  };
+
   const form = input.form;
   if (form && !observedForms.has(form)) {
     observedForms.add(form);
-    form.addEventListener("submit", () => {
-      if (!input.value) return;
-
-      chrome.runtime.sendMessage({
-        type: "SAVE_CREDS",
-        payload: {
-          username: getUsernameValue(input),
-          password: input.value,
-          origin: location.origin
-        }
-      });
-    });
+    form.addEventListener("submit", saveCreds);
   }
+
+  // Also intercept submit button clicks — catches SPA login forms and
+  // forms that call preventDefault() on submit without relying on the event.
+  const searchRoot: Element = form ?? input.closest("div, section, main") ?? document.body;
+  searchRoot.querySelectorAll<HTMLElement>(
+    'button[type="submit"], input[type="submit"], button:not([type="button"]):not([type="reset"])'
+  ).forEach(btn => btn.addEventListener("click", saveCreds));
 };
 
 // -----------------------------
