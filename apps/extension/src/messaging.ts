@@ -75,7 +75,7 @@ export type ExtensionMessage =
   | DownloadResultMessage
   | LogPermissionUseMessage
   | TrackingStrippedMessage
-  | TrackingScriptsDetectedMessage;
+  | TrackingScriptsDetectedMessage
   | GetCredentialsMessage
   | GeneratePasswordMessage;
 
