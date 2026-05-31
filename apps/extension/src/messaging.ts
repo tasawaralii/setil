@@ -56,6 +56,18 @@ export type TrackingScriptsDetectedMessage = {
   };
 };
 
+export type GetCredentialsMessage = {
+  type: "GET_CREDS";
+  payload: {
+    origin: string;
+  };
+};
+
+export type GeneratePasswordMessage = {
+  type: "GENERATE_PASSWORD";
+  payload?: Record<string, never>;
+};
+
 export type ExtensionMessage =
   | BlockPageMessage
   | SaveCredentialsMessage
@@ -64,6 +76,8 @@ export type ExtensionMessage =
   | LogPermissionUseMessage
   | TrackingStrippedMessage
   | TrackingScriptsDetectedMessage;
+  | GetCredentialsMessage
+  | GeneratePasswordMessage;
 
 export const isMessageType = <T extends ExtensionMessage["type"]>(
   message: unknown,
