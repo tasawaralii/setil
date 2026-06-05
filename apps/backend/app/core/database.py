@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
 settings = get_settings()
 
 engine = create_engine(
-    settings.neon_database_url or "sqlite+pysqlite:///./local.db",
+    settings.database_url or "sqlite+pysqlite:///./local.db",
     poolclass=NullPool,
     future=True,
 )

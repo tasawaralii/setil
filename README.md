@@ -28,4 +28,4 @@ Monorepo for a Chrome Extension frontend and a FastAPI backend.
    pnpm dev:backend
    ```
 
-4. Set `NEON_DATABASE_URL` and `JWT_SECRET` in `.env` before connecting the backend to Neon.
+4. Set `DATABASE_URL` and `JWT_SECRET` in `.env` before connecting the backend to DB.

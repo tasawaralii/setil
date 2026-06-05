@@ -1,0 +1,16 @@
+services:
+  setil-backend:
+    command: uv run python main.py
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/backend
+          target: /app
+          ignore:
+            - .venv/
+            - __pycache__/
+            - .pytest_cache/
+        - action: rebuild
+          path: ./apps/backend/pyproject.toml
+        - action: rebuild
+          path: ./apps/backend/uv.lock

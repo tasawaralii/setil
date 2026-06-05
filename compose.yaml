@@ -1,0 +1,23 @@
+services:
+  setil-db:
+    image: postgres:16-alpine
+    container_name: setil-db
+    environment:
+      POSTGRES_USER: setil
+      POSTGRES_PASSWORD: setil
+      POSTGRES_DB: setil
+    ports:
+      - "5432:5432"
+    volumes:
+      - setil-db-data:/var/lib/postgresql/data
+  setil-backend:
+    build: .
+    container_name: setil-backend
+    env_file:
+      - ./apps/backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - setil-db
+volumes:
+  setil-db-data:
