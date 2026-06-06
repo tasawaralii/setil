@@ -2,6 +2,8 @@ import { FeatureTogglePanel } from "../ui/FeatureTogglePanel";
 import GlobalTogglePanel from "../ui/GlobalTogglePanel";
 import { page, shell } from "../ui/style";
 import { useEffect, useState } from "react";
+import { login, register } from "../api/auth";
+
 
 interface BlockedDomain {
   count: number;
@@ -21,6 +23,8 @@ const headerStyles = {
     border: "1px solid rgba(148, 163, 184, 0.2)",
     boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
     backdropFilter: "blur(14px)",
+    position: "relative", 
+    zIndex: 100,
   } as React.CSSProperties,
   brand: {
     display: "flex",
@@ -192,6 +196,50 @@ function TrackingStats() {
 }
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
+  const [userInitial, setUserInitial] = useState("U");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  useEffect(() => {
+    chrome.storage.local.get(["token", "userEmail"]).then((data) => {
+      if (data.token) {
+        setIsAuthenticated(true);
+        if (data.userEmail) {
+          setUserInitial(data.userEmail.charAt(0).toUpperCase());
+        }
+      }
+    });
+  }, []);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    try {
+      const fn = isLogin ? login : register;
+      const res = await fn(email, password);
+      await chrome.storage.local.set({ token: res.access_token, userEmail: email });
+      setIsAuthenticated(true);
+      setUserInitial(email.charAt(0).toUpperCase());
+      setShowAuth(false);
+      setEmail("");
+      setPassword("");
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || "Authentication failed";
+      setAuthError(errorMessage);
+    }
+  };
+
+  const handleLogout = () => {
+    chrome.storage.local.remove(["token", "userEmail"]);
+    setIsAuthenticated(false);
+    setIsDropdownOpen(false);
+  };
+
   return (
     <main style={page}>
       <div style={shell}>
@@ -205,31 +253,95 @@ export function App() {
             <img src="/icons/logo.png" alt="Setil" style={headerStyles.logo} />
           </div>
 
-          <button
-            type="button"
-            style={headerStyles.accountButton}
-            aria-label="Sign in to your account"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={headerStyles.accountIcon}
-              aria-hidden="true"
+          {isAuthenticated ? (
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                style={{ ...headerStyles.accountButton, background: "#3b82f6", color: "white" }}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                title="Account"
+              >
+                <span style={{ fontWeight: "bold", fontSize: "14px" }}>{userInitial}</span>
+              </button>
+              {isDropdownOpen && (
+                <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "8px", background: "white", border: "1px solid #e2e8f0", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", zIndex: 9999, minWidth: "120px", overflow: "hidden" }}>
+                  <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", borderBottom: "1px solid #e2e8f0", fontSize: "13px", color: "#333", cursor: "pointer" }} onClick={() => setIsDropdownOpen(false)}>Settings</button>
+                  <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", fontSize: "13px", color: "#ef4444", cursor: "pointer" }} onClick={handleLogout}>Logout</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              style={headerStyles.accountButton}
+              aria-label="Sign in to your account"
+              onClick={() => { setShowAuth(!showAuth); setAuthError(""); }}
             >
-              <path
-                d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-                fill="currentColor"
-              />
-              <path
-                d="M4 20.5C4 16.91 7.58 14 12 14s8 2.91 8 6.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={headerStyles.accountIcon}
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M4 20.5C4 16.91 7.58 14 12 14s8 2.91 8 6.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
         </header>
+
+        {showAuth && !isAuthenticated && (
+          <div style={{ padding: "12px", background: "white", borderRadius: "8px", marginBottom: "12px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+            <h3 style={{ margin: "0 0 12px 0", fontSize: "14px", color: "#1e293b", textAlign: "center" }}>
+              {isLogin ? "Sign In" : "Create Account"}
+            </h3>
+            <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {authError && (
+                <div style={{ padding: "8px", background: "#fee2e2", color: "#b91c1c", borderRadius: "6px", fontSize: "12px", textAlign: "center", border: "1px solid #fca5a5" }}>
+                  {authError}
+                </div>
+              )}
+              <input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+              />
+              <button
+                type="submit"
+                style={{ padding: "8px", background: "#3b82f6", color: "white", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "13px", marginTop: "4px" }}
+              >
+                {isLogin ? "Login" : "Register"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsLogin(!isLogin); setAuthError(""); }}
+                style={{ background: "none", border: "none", color: "#64748b", fontSize: "12px", cursor: "pointer", marginTop: "4px" }}
+              >
+                {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
+              </button>
+            </form>
+          </div>
+        )}
 
         <GlobalTogglePanel />
         <TrackingStats />

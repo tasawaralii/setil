@@ -31,3 +31,6 @@ export const CheckDownloadHash = async (hash: string, apiKey?: string) => {
 
     return response.data
 }
+
+export * from "./auth";
+
