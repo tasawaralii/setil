@@ -12,6 +12,53 @@ const PERMISSION_RISK_SCORES: Record<string, number> = {
   "<all_urls>": 10
 };
 
+// Define the logic that Chrome will inject into the webpage's memory
+const hookWebAPIs = () => {
+  // Prevent double injection if the tab reloads elements
+  if ((window as any).__setilHooked) return;
+  (window as any).__setilHooked = true;
+
+  console.log("[Setil Page Context] API Hooks successfully injected via native scripting.");
+
+  // Hook Geolocation
+  if (navigator.geolocation) {
+    const originalGetPosition = navigator.geolocation.getCurrentPosition;
+    navigator.geolocation.getCurrentPosition = function (success, error, options) {
+      console.log("[Setil Page Context] 🚩 Geolocation request intercepted!");
+      window.dispatchEvent(new CustomEvent('SETIL_API_ALERT', { 
+        detail: { permission: 'geolocation', origin: window.location.origin } 
+      }));
+      return originalGetPosition.apply(this, arguments);
+    };
+  }
+
+  // Hook Clipboard Read
+  if (navigator.clipboard) {
+    const originalReadText = navigator.clipboard.readText;
+    navigator.clipboard.readText = function () {
+      console.log("[Setil Page Context] 🚩 Clipboard read request intercepted!");
+      window.dispatchEvent(new CustomEvent('SETIL_API_ALERT', { 
+        detail: { permission: 'clipboard', origin: window.location.origin } 
+      }));
+      return originalReadText.apply(this, arguments);
+    };
+  }
+};
+
+// Listen for tabs loading and natively execute the script
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only inject when the page starts loading to catch scripts early
+  if (changeInfo.status === 'loading' && tab.url && tab.url.startsWith('http')) {
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      world: "MAIN", // <-- This is the magic MV3 key that bypasses the CSP
+      func: hookWebAPIs
+    }).catch(err => {
+      // Safely ignore errors on restricted pages like chrome:// settings
+    });
+  }
+});
+
 const logWebsitePermissionUse = async (origin: string, permission: string) => {
   const storage = await chrome.storage.local.get(["permissions"]);
   let permissionsState = storage.permissions || { siteRisks: {} };
@@ -73,17 +120,21 @@ const auditExtensionPermissions = async (extInfo: chrome.management.ExtensionInf
 // Message Listener (Webpage Context)
 // -----------------------------
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
-  Promise.all([getExtensionStatus(), getFeatureSettings()]).then(([status, settings]) => {
-    // Check both global master switch and module-specific toggle
-    if (!status.enabled || !settings.permissionManager) return;
+  if (isMessageType(message, "LOG_PERMISSION_USE")) {
+    console.log("[Setil Background Worker] 🟢 Received LOG_PERMISSION_USE payload:", message.payload);
+    
+    Promise.all([getExtensionStatus(), getFeatureSettings()]).then(([status, settings]) => {
+      console.log(`[Setil Background Worker] Master Enabled: ${status.enabled}, Module Enabled: ${settings.permissionManager}`);
+      
+      if (!status.enabled || !settings.permissionManager) {
+        console.log("[Setil Background Worker] Audit aborted because module is toggled off.");
+        return;
+      }
 
-    if (isMessageType(message, "LOG_PERMISSION_USE")) {
       const { origin, permission } = message.payload;
       void logWebsitePermissionUse(origin, permission);
-    }
-  });
-  
-  // Return false because we don't need to hold the message channel open for async responses
+    });
+  }
   return false; 
 });
 
