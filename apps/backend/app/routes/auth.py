@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.index import UserCreate, Token
-from app.models.user import User
+from app.models.user import User, UserStat
+from app.core.deps import get_current_user
 from app.core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter()
@@ -31,3 +32,18 @@ def login(user_in: UserCreate, db: Session = Depends(get_db)) -> dict:
 
     token = create_access_token(str(user.id))
     return {"access_token": token, "token_type": "bearer"}
+
+@router.patch("/sync-stats")
+def sync_user_stats(stats_payload: dict[str, int], db: Session = Depends(get_db), user = Depends(get_current_user)):
+    for key, value in stats_payload.items():
+        record = db.query(UserStat).filter(UserStat.user_id == user.id, UserStat.stat_key == key).first()
+        if record:
+            # Prevent local extension counts from overriding a higher cloud count
+            record.stat_value = max(record.stat_value, value)
+        else:
+            db.add(UserStat(user_id=user.id, stat_key=key, stat_value=value))
+    db.commit()
+    
+    # Return the entire true master state back to the extension to overwrite its local numbers
+    all_stats = db.query(UserStat).filter(UserStat.user_id == user.id).all()
+    return {item.stat_key: item.stat_value for item in all_stats}
