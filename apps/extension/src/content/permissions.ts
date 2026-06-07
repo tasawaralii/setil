@@ -1,39 +1,44 @@
-import { getFeatureSettings } from "../settings";
-
-const globalWindow = window as Window & {
-  __setilGeolocationWrapped?: boolean;
-};
-
-const wrapGeolocation = () => {
-  if (globalWindow.__setilGeolocationWrapped || !navigator.geolocation?.getCurrentPosition) {
-    return;
-  }
-
-  globalWindow.__setilGeolocationWrapped = true;
-
-  const originalGetCurrentPosition = navigator.geolocation.getCurrentPosition.bind(
-    navigator.geolocation
-  );
-
-  navigator.geolocation.getCurrentPosition = function (...args) {
-    void (async () => {
-      const settings = await getFeatureSettings();
-
-      if (!settings.permissionManager) {
-        return;
+const injectAPIMonitor = () => {
+  const scriptContent = `
+    (() => {
+      // Hook Geolocation
+      if (navigator.geolocation) {
+        const originalGetPosition = navigator.geolocation.getCurrentPosition;
+        navigator.geolocation.getCurrentPosition = function (success, error, options) {
+          window.dispatchEvent(new CustomEvent('SETIL_API_ALERT', { 
+            detail: { permission: 'geolocation', origin: window.location.origin } 
+          }));
+          return originalGetPosition.apply(this, arguments);
+        };
       }
 
-      void chrome.runtime.sendMessage({
-        type: "LOG_PERMISSION_USE",
-        payload: {
-          permission: "geolocation",
-          origin: location.origin
-        }
-      });
+      // Hook Clipboard Read
+      if (navigator.clipboard) {
+        const originalReadText = navigator.clipboard.readText;
+        navigator.clipboard.readText = function () {
+          window.dispatchEvent(new CustomEvent('SETIL_API_ALERT', { 
+            detail: { permission: 'clipboard', origin: window.location.origin } 
+          }));
+          return originalReadText.apply(this, arguments);
+        };
+      }
     })();
+  `;
 
-    return originalGetCurrentPosition(...args);
-  };
+  const script = document.createElement("script");
+  script.textContent = scriptContent;
+  (document.head || document.documentElement).appendChild(script);
+  script.remove();
 };
 
-wrapGeolocation();
+// Listen for the custom events fired by our injected script
+window.addEventListener('SETIL_API_ALERT', (event: any) => {
+  const { permission, origin } = event.detail;
+  
+  chrome.runtime.sendMessage({
+    type: "LOG_PERMISSION_USE",
+    payload: { permission, origin }
+  });
+});
+
+injectAPIMonitor();

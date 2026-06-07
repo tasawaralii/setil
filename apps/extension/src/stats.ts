@@ -6,7 +6,8 @@ export type StatKey =
   | "maliciousDownloadsBlocked"
   | "passwordsProtected"
   | "permissionsBlocked"
-  | "trackersBlocked";
+  | "trackersBlocked"
+  | "permissionsAudited";
 
 export type FeatureStat = {
   key: StatKey;
@@ -22,7 +23,8 @@ export const defaultFeatureStats: FeatureStats = {
   maliciousDownloadsBlocked: 0,
   passwordsProtected: 0,
   permissionsBlocked: 0,
-  trackersBlocked: 0
+  trackersBlocked: 0,
+  permissionsAudited: 0
 };
 
 export const normalizeFeatureStats = (
