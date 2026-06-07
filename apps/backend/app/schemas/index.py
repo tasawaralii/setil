@@ -54,3 +54,19 @@ class PasswordEntryUpdate(BaseModel):
     username: str | None = None
     password: str | None = None
     iv: list[int] | None = None
+
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional
+
+class WhitelistedDomainCreate(BaseModel):
+    domain: str = Field(..., description="The hostname to exempt from phishing checks, e.g., 'example.com'")
+
+class WhitelistedDomainOut(BaseModel):
+    id: int
+    domain: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
