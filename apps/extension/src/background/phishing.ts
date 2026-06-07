@@ -77,7 +77,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // Listen for user bypass decisions from the content script
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "ALLOW_SESSION_PHISHING") {
-    sessionAllowedDomains.add(message.payload.domain);
+    // sessionAllowedDomains.add(message.payload.domain);
   } 
   else if (message.type === "TRUST_DOMAIN_PHISHING") {
     chrome.storage.local.get(["phishing"]).then((storage) => {

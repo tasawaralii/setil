@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FeatureTogglePanel } from "../ui/FeatureTogglePanel";
 import { getFeatureStats, FeatureStats, defaultFeatureStats, FEATURE_STATS_STORAGE_KEY } from "../stats";
 import { PasswordVault } from "../ui/PasswordVault";
+import {PhishingManager} from "../ui/PhishingManger";
 
 export function Options() {
   const [stats, setStats] = useState<FeatureStats>(defaultFeatureStats);
@@ -138,6 +139,10 @@ export function Options() {
 
         <section style={{ ...panelCardStyle, marginTop: "24px" }}>
           <PasswordVault />
+        </section>
+
+        <section style={{ ...panelCardStyle, marginTop: "24px" }}>
+          <PhishingManager />
         </section>
 
       </div>
