@@ -2,6 +2,7 @@ export type BlockPageMessage = {
   type: "BLOCK_PAGE";
   payload: {
     reason: string;
+    domain: string;
   };
 };
 
@@ -83,6 +84,20 @@ export type GeneratePasswordMessage = {
   payload?: Record<string, never>;
 };
 
+export type AllowSessionPhishingMessage = {
+  type: "ALLOW_SESSION_PHISHING";
+  payload: {
+    domain: string;
+  };
+};
+
+export type TrustDomainPhishingMessage = {
+  type: "TRUST_DOMAIN_PHISHING";
+  payload: {
+    domain: string;
+  };
+};
+
 export type ExtensionMessage =
   | BlockPageMessage
   | SaveCredentialsMessage
@@ -94,7 +109,9 @@ export type ExtensionMessage =
   | TrackingStrippedMessage
   | TrackingScriptsDetectedMessage
   | GetCredentialsMessage
-  | GeneratePasswordMessage;
+  | GeneratePasswordMessage
+  | AllowSessionPhishingMessage
+  | TrustDomainPhishingMessage
 
 export const isMessageType = <T extends ExtensionMessage["type"]>(
   message: unknown,
