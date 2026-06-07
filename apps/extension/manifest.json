@@ -23,7 +23,8 @@
     "tabs",
     "downloads",
     "declarativeNetRequest",
-    "declarativeNetRequestFeedback"
+    "declarativeNetRequestFeedback",
+    "notifications"
   ],
   "declarative_net_request": {
     "rule_resources": [

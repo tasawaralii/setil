@@ -49,3 +49,8 @@ class PasswordEntryOut(PasswordEntryBase):
 
     class Config:
         orm_mode = True
+
+class PasswordEntryUpdate(BaseModel):
+    username: str | None = None
+    password: str | None = None
+    iv: list[int] | None = None

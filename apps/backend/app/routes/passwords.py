@@ -4,7 +4,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.schemas.index import PasswordEntryCreate, PasswordEntryOut
+from app.schemas.index import PasswordEntryCreate, PasswordEntryOut, PasswordEntryUpdate
 from app.models.password_entry import PasswordEntry
 
 router = APIRouter()
@@ -37,6 +37,18 @@ def get_password(entry_id: int, db: Session = Depends(get_db), user=Depends(get_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return _to_out(item)
 
+@router.put("/{entry_id}", response_model=PasswordEntryOut)
+def update_password(entry_id: int, entry: PasswordEntryUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    item = db.query(PasswordEntry).filter(PasswordEntry.id == entry_id, PasswordEntry.user_id == user.id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    item.credential_username = entry.username
+    item.encrypted_password = entry.password
+    item.iv = entry.iv
+
+    db.commit()
+    db.refresh(item)
+    return _to_out(item)
 
 @router.delete("/{entry_id}")
 def delete_password(entry_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
