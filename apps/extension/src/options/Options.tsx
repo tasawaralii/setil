@@ -3,6 +3,7 @@ import { FeatureTogglePanel } from "../ui/FeatureTogglePanel";
 import { getFeatureStats, FeatureStats, defaultFeatureStats, FEATURE_STATS_STORAGE_KEY } from "../stats";
 import { PasswordVault } from "../ui/PasswordVault";
 import {PhishingManager} from "../ui/PhishingManger";
+import { CloudSyncButton } from "../ui/CloudSyncButton";
 
 export function Options() {
   const [stats, setStats] = useState<FeatureStats>(defaultFeatureStats);
@@ -49,18 +50,31 @@ export function Options() {
       <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
         
         {/* Header */}
-        <header style={{ marginBottom: "40px" }}>
-          <h1 style={{ 
-            fontSize: "28px", 
-            fontWeight: "700", 
-            letterSpacing: "-0.02em",
-            margin: "0 0 8px 0" 
-          }}>
-            Setil Security Dashboard
-          </h1>
-          <p style={{ color: "#64748b", margin: 0, fontSize: "15px" }}>
-            Monitor your protection metrics and manage your module configurations.
-          </p>
+        <header style={{ 
+          marginBottom: "40px",
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center" 
+        }}>
+          {/* Left Side: Title and Subtitle */}
+          <div>
+            <h1 style={{ 
+              fontSize: "28px", 
+              fontWeight: "700", 
+              letterSpacing: "-0.02em",
+              margin: "0 0 8px 0" 
+            }}>
+              Setil Security Dashboard
+            </h1>
+            <p style={{ color: "#64748b", margin: 0, fontSize: "15px" }}>
+              Monitor your protection metrics and manage your module configurations.
+            </p>
+          </div>
+
+          {/* Right Side: The Sync Button (Must be a direct sibling to the div above) */}
+          <div>
+            <CloudSyncButton />
+          </div>
         </header>
 
         {/* Stats Grid */}

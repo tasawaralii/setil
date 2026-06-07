@@ -3,7 +3,7 @@ import GlobalTogglePanel from "../ui/GlobalTogglePanel";
 import { page, shell } from "../ui/style";
 import { useEffect, useState } from "react";
 import { login, register } from "../api/auth";
-
+import { CompactSyncButton } from "../ui/CompactSyncButton";
 
 interface BlockedDomain {
   count: number;
@@ -23,7 +23,7 @@ const headerStyles = {
     border: "1px solid rgba(148, 163, 184, 0.2)",
     boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
     backdropFilter: "blur(14px)",
-    position: "relative", 
+    position: "relative",
     zIndex: 100,
   } as React.CSSProperties,
   brand: {
@@ -254,21 +254,24 @@ export function App() {
           </div>
 
           {isAuthenticated ? (
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                style={{ ...headerStyles.accountButton, background: "#3b82f6", color: "white" }}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                title="Account"
-              >
-                <span style={{ fontWeight: "bold", fontSize: "14px" }}>{userInitial}</span>
-              </button>
-              {isDropdownOpen && (
-                <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "8px", background: "white", border: "1px solid #e2e8f0", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", zIndex: 9999, minWidth: "120px", overflow: "hidden" }}>
-                  <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", borderBottom: "1px solid #e2e8f0", fontSize: "13px", color: "#333", cursor: "pointer" }} onClick={() => setIsDropdownOpen(false)}>Settings</button>
-                  <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", fontSize: "13px", color: "#ef4444", cursor: "pointer" }} onClick={handleLogout}>Logout</button>
-                </div>
-              )}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <CompactSyncButton />
+              <div style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  style={{ ...headerStyles.accountButton, background: "#3b82f6", color: "white" }}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  title="Account"
+                >
+                  <span style={{ fontWeight: "bold", fontSize: "14px" }}>{userInitial}</span>
+                </button>
+                {isDropdownOpen && (
+                  <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "8px", background: "white", border: "1px solid #e2e8f0", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", zIndex: 9999, minWidth: "120px", overflow: "hidden" }}>
+                    <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", borderBottom: "1px solid #e2e8f0", fontSize: "13px", color: "#333", cursor: "pointer" }} onClick={() => setIsDropdownOpen(false)}>Settings</button>
+                    <button type="button" style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", fontSize: "13px", color: "#ef4444", cursor: "pointer" }} onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <button
