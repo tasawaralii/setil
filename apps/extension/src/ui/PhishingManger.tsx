@@ -1,39 +1,52 @@
 import { useEffect, useState } from "react";
+import { getWhitelist, addDomainToWhitelist, removeDomainFromWhitelist } from "../api/phishing";
+
+type WhitelistedDomain = {
+  id: number;
+  domain: string;
+};
 
 export function PhishingManager() {
-  const [whitelist, setWhitelist] = useState<string[]>([]);
-  const [sessionAllowed, setSessionAllowed] = useState<string[]>([]);
+  const [whitelist, setWhitelist] = useState<WhitelistedDomain[]>([]);
   const [newDomain, setNewDomain] = useState("");
 
   // -----------------------------
   // Data Loading & Syncing
   // -----------------------------
-  const loadPhishingData = () => {
-    // 1. Fetch persistent whitelist from local storage
-    chrome.storage.local.get(["phishing"], (result) => {
-      setWhitelist(result.phishing?.whitelist || []);
-    });
+  const loadPhishingData = async () => {
+    try {
+      // 1. Fetch persistent whitelist from backend cloud
+      const response = await getWhitelist();
+      const backendDomains: WhitelistedDomain[] = response;
+      setWhitelist(backendDomains);
 
-    // 2. Fetch ephemeral session exceptions from background memory
-    // (Optional: Requires adding a simple response handler in your background if needed,
-    // otherwise gracefully falls back to empty list)
-    chrome.runtime.sendMessage({ type: "GET_SESSION_PHISHING_DOMAINS" }, (response) => {
-      if (response && Array.isArray(response)) {
-        setSessionAllowed(response);
-      }
-    });
+      // 2. Sync just the strings to local storage for the background worker
+      const domainStrings = backendDomains.map((item) => item.domain);
+      const storage = await chrome.storage.local.get(["phishing"]);
+      await chrome.storage.local.set({
+        phishing: { ...storage.phishing, whitelist: domainStrings }
+      });
+    } catch (error) {
+      console.error("Cloud sync failed. Loading local fallback:", error);
+      // Fallback if offline
+      chrome.storage.local.get(["phishing"], (result) => {
+        const localStrings = result.phishing?.whitelist || [];
+        setWhitelist(localStrings.map((d: string) => ({ id: -1, domain: d })));
+      });
+    }
   };
 
   useEffect(() => {
     loadPhishingData();
 
-    // Listen for storage adjustments from background blocks
+    // Listen for storage adjustments from background blocks (e.g., user clicking "Trust" on a red page)
     const handleStorageChange = (
       changes: { [key: string]: chrome.storage.StorageChange },
       areaName: string
     ) => {
       if (areaName === "local" && changes.phishing) {
-        setWhitelist(changes.phishing.newValue?.whitelist || []);
+        // We re-fetch from backend to get the newly generated database ID
+        loadPhishingData(); 
       }
     };
 
@@ -48,32 +61,49 @@ export function PhishingManager() {
     e.preventDefault();
     const cleanDomain = newDomain.trim().toLowerCase().replace(/^https?:\/\//, "");
     
-    if (!cleanDomain || whitelist.includes(cleanDomain)) return;
+    if (!cleanDomain || whitelist.some((w) => w.domain === cleanDomain)) return;
 
-    const updatedWhitelist = [...whitelist, cleanDomain];
-    setWhitelist(updatedWhitelist);
-    setNewDomain("");
+    try {
+      // 1. Post to backend
+      const response = await addDomainToWhitelist(cleanDomain );
+      const addedItem: WhitelistedDomain = response;
 
-    const storage = await chrome.storage.local.get(["phishing"]);
-    await chrome.storage.local.set({
-      phishing: {
-        ...storage.phishing,
-        whitelist: updatedWhitelist
-      }
-    });
+      // 2. Update React State
+      const updatedWhitelist = [...whitelist, addedItem];
+      setWhitelist(updatedWhitelist);
+      setNewDomain("");
+
+      // 3. Update Chrome Local Storage
+      const domainStrings = updatedWhitelist.map((w) => w.domain);
+      const storage = await chrome.storage.local.get(["phishing"]);
+      await chrome.storage.local.set({
+        phishing: { ...storage.phishing, whitelist: domainStrings }
+      });
+    } catch (error) {
+      console.error("Failed to sync new trusted domain to cloud:", error);
+    }
   };
 
-  const handleRemoveDomain = async (domainToRemove: string) => {
-    const updatedWhitelist = whitelist.filter((d) => d !== domainToRemove);
-    setWhitelist(updatedWhitelist);
-
-    const storage = await chrome.storage.local.get(["phishing"]);
-    await chrome.storage.local.set({
-      phishing: {
-        ...storage.phishing,
-        whitelist: updatedWhitelist
+  const handleRemoveDomain = async (idToRemove: number, domainString: string) => {
+    try {
+      // 1. Delete from backend (if it has a valid database ID)
+      if (idToRemove !== -1) {
+        await removeDomainFromWhitelist(idToRemove);
       }
-    });
+
+      // 2. Update React State
+      const updatedWhitelist = whitelist.filter((w) => w.domain !== domainString);
+      setWhitelist(updatedWhitelist);
+
+      // 3. Update Chrome Local Storage
+      const domainStrings = updatedWhitelist.map((w) => w.domain);
+      const storage = await chrome.storage.local.get(["phishing"]);
+      await chrome.storage.local.set({
+        phishing: { ...storage.phishing, whitelist: domainStrings }
+      });
+    } catch (error) {
+      console.error("Failed to revoke domain from cloud:", error);
+    }
   };
 
   return (
@@ -122,10 +152,7 @@ export function PhishingManager() {
         </button>
       </form>
 
-      {/* Lists Layout Container */}
-      {/* add this css for 2nd column 'gridTemplateColumns: "1fr 1fr", gap: "24px"' */}
-      <div style={{ display: "grid"}}>
-        
+      <div style={{ display: "grid" }}>
         {/* Persistent Whitelist Column */}
         <div>
           <h4 style={{ fontSize: "14px", fontWeight: "600", color: "#334155", marginBottom: "12px" }}>
@@ -136,11 +163,11 @@ export function PhishingManager() {
               <div style={emptyStateStyle}>No domains whitelisted explicitly.</div>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {whitelist.map((domain) => (
-                  <li key={domain} style={listItemStyle}>
-                    <span style={{ fontFamily: "monospace", color: "#334155" }}>{domain}</span>
+                {whitelist.map((item) => (
+                  <li key={item.domain} style={listItemStyle}>
+                    <span style={{ fontFamily: "monospace", color: "#334155" }}>{item.domain}</span>
                     <button
-                      onClick={() => handleRemoveDomain(domain)}
+                      onClick={() => handleRemoveDomain(item.id, item.domain)}
                       style={deleteButtonStyle}
                       title="Revoke trust framework"
                     >
@@ -152,28 +179,6 @@ export function PhishingManager() {
             )}
           </div>
         </div>
-
-        {/* Ephemeral Session Allowed Column */}
-        {/* <div>
-          <h4 style={{ fontSize: "14px", fontWeight: "600", color: "#334155", marginBottom: "12px" }}>
-            Temporary Session Bypasses
-          </h4>
-          <div style={listContainerStyle}>
-            {sessionAllowed.length === 0 ? (
-              <div style={emptyStateStyle}>No active bypass rules running in current browser context.</div>
-            ) : (
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {sessionAllowed.map((domain) => (
-                  <li key={domain} style={{ ...listItemStyle, justifyContent: "flex-start" }}>
-                    <span style={{ fontFamily: "monospace", color: "#64748b" }}>{domain}</span>
-                    <span style={badgeStyle}>Active Session</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div> */}
-
       </div>
     </div>
   );
@@ -216,14 +221,4 @@ const deleteButtonStyle = {
   fontWeight: "500",
   cursor: "pointer",
   padding: "2px 6px"
-};
-
-const badgeStyle = {
-  marginLeft: "auto",
-  backgroundColor: "#f1f5f9",
-  color: "#475569",
-  fontSize: "11px",
-  fontWeight: "500",
-  padding: "2px 8px",
-  borderRadius: "12px"
 };
