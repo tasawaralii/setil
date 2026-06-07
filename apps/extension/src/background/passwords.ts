@@ -1,6 +1,6 @@
 import { incrementStat } from "../stats";
 import { getFeatureSettings } from "../settings";
-import { storePassword, updatePassword } from "../api/passwrods"; // Kept your original typo filename string
+import { storePassword, updatePassword } from "../api/passwords"; // Kept your original typo filename string
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -119,10 +119,11 @@ const saveCredential = async (payload: { username: string | null; password: stri
         // Otherwise, send a completely new entry request
         console.log("Storing new password entry to backend...");
         const response = await storePassword(apiPayload);
-        serverResponseData = response.data;
+        serverResponseData = response;
         backendId = serverResponseData.id;
       }
     } catch (apiError) {
+      console.log(serverResponseData);
       console.error("Backend database sync dropped, processing with local fallback execution:", apiError);
     }
   } else {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import {deletePassword} from "../api/passwords";
+
 // Mirroring the background credential schema
 type Credential = {
   id: number | null;
@@ -95,9 +97,29 @@ export function PasswordVault() {
   };
 
   const deleteCredential = async (indexToRemove: number) => {
+    const credentialToDelete = credentials[indexToRemove];
+    if (!credentialToDelete) return;
+
+    // 1. If the credential has a valid backend ID, delete it from Neon Postgres
+    if (credentialToDelete.id !== null) {
+      try {
+        console.log(`Attempting cloud removal for credential ID: ${credentialToDelete.id}`);
+        await deletePassword(credentialToDelete.id);
+      } catch (error) {
+        console.error("Backend database deletion dropped. Processing local fallback cleanup:", error);
+        // We continue to remove it locally so the UX doesn't freeze for the user
+      }
+    } else {
+      console.log(credentialToDelete);
+      console.log("Local-only credential detected. Skipping backend sync pipeline.");
+    }
+
     const updated = credentials.filter((_, idx) => idx !== indexToRemove);
+    
     await chrome.storage.local.set({ credentials: updated });
-    // Note: To cleanly support full deletion sync, your backend DELETE route can hook here using credential.id
+
+    setVisibleState({});
+    setRevealedPasswords({});
   };
 
   const filteredCredentials = credentials.filter((c) => {
