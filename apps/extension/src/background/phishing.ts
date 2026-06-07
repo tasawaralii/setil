@@ -1,6 +1,7 @@
 import api from "../api/api";
 import { incrementStat } from "../stats";
 import { getFeatureSettings } from "../settings";
+import { addDomainToWhitelist } from "../api/phishing"
 
 const isInspectableUrl = (url: string) => /^https?:/i.test(url);
 
@@ -41,7 +42,7 @@ const detectPhishing = async (tabId: number, url: string) => {
 
   try {
     const response = await api.get("/check-url", {
-      params: { 
+      params: {
         url,
         api_key: settings.virusTotalApiKey // Pass user's key if available
       }
@@ -59,7 +60,7 @@ const detectPhishing = async (tabId: number, url: string) => {
       type: "BLOCK_PAGE",
       payload: {
         reason: result?.reason ?? "This page was flagged as suspicious.",
-        domain: domain 
+        domain: domain
       }
     });
   } catch (error) {
@@ -78,15 +79,33 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "ALLOW_SESSION_PHISHING") {
     // sessionAllowedDomains.add(message.payload.domain);
-  } 
+  }
   else if (message.type === "TRUST_DOMAIN_PHISHING") {
-    chrome.storage.local.get(["phishing"]).then((storage) => {
+    const targetDomain = message.payload.domain;
+
+    // We pull "token" as well to ensure we only hit the backend if the user is logged in
+    chrome.storage.local.get(["token", "phishing"]).then(async (storage) => {
       const whitelist = storage.phishing?.whitelist || [];
-      if (!whitelist.includes(message.payload.domain)) {
-        chrome.storage.local.set({
-          phishing: { ...storage.phishing, whitelist: [...whitelist, message.payload.domain] }
+
+      if (!whitelist.includes(targetDomain)) {
+        // 2. Instant Local Update (Optimistic update so the UX feels instant)
+        const updatedWhitelist = [...whitelist, targetDomain];
+        await chrome.storage.local.set({
+          phishing: { ...storage.phishing, whitelist: updatedWhitelist }
         });
+
+        // 3. Backend Synchronization
+        if (storage.token) {
+          try {
+            await addDomainToWhitelist(targetDomain);
+            console.info(`Setil: Successfully synced ${targetDomain} to cloud whitelist.`);
+          } catch (error) {
+            console.error("Setil: Failed to sync trusted domain to backend:", error);
+          }
+        } else {
+          console.info("Setil: User not logged in. Domain trusted locally only.");
+        }
       }
-    });
+    })
   }
 });
