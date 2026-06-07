@@ -4,6 +4,7 @@ import { getFeatureStats, FeatureStats, defaultFeatureStats, FEATURE_STATS_STORA
 import { PasswordVault } from "../ui/PasswordVault";
 import {PhishingManager} from "../ui/PhishingManger";
 import { CloudSyncButton } from "../ui/CloudSyncButton";
+import { PermissionAuditor } from "../ui/PermissionAuditor";
 
 export function Options() {
   const [stats, setStats] = useState<FeatureStats>(defaultFeatureStats);
@@ -132,27 +133,12 @@ export function Options() {
           </div>
         </section>
 
-        {/* Feature Toggles */}
-        <section style={{ 
-          backgroundColor: "#ffffff", 
-          border: "1px solid #e2e8f0",
-          borderRadius: "8px", 
-          padding: "32px",
-          boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
-        }}>
-          <h2 style={{ 
-            fontSize: "18px", 
-            fontWeight: "600", 
-            marginBottom: "24px",
-            letterSpacing: "-0.01em"
-          }}>
-            Active Security Modules
-          </h2>
-          <FeatureTogglePanel />
+        <section style={{ ...panelCardStyle, marginTop: "24px" }}>
+          <PasswordVault />
         </section>
 
         <section style={{ ...panelCardStyle, marginTop: "24px" }}>
-          <PasswordVault />
+          <PermissionAuditor />
         </section>
 
         <section style={{ ...panelCardStyle, marginTop: "24px" }}>
