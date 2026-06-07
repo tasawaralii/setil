@@ -249,20 +249,24 @@ const protectFingerprints = async () => {
   }
 };
 
-// Initialize all protections
-void stripTrackingParameters();
-void detectThirdPartyScripts();
-void protectFingerprints();
-void stripReferrer();
-void cleanTrackerStorage();
+const settings = await getFeatureSettings();
+if (settings.trackingPrevention) {
 
-// Monitor dynamically added scripts — inspect only the appended node, not the whole document
-const originalAppendChild = Element.prototype.appendChild;
-Element.prototype.appendChild = function <T extends Node>(node: T): T {
-  if (node instanceof HTMLScriptElement) {
-    void getFeatureSettings().then((settings) => {
-      if (settings.trackingPrevention) checkScript(node);
-    });
-  }
-  return originalAppendChild.call(this, node) as T;
-};
+  // Initialize all protections
+  void stripTrackingParameters();
+  void detectThirdPartyScripts();
+  void protectFingerprints();
+  void stripReferrer();
+  void cleanTrackerStorage();
+
+  // Monitor dynamically added scripts — inspect only the appended node, not the whole document
+  const originalAppendChild = Element.prototype.appendChild;
+  Element.prototype.appendChild = function <T extends Node>(node: T): T {
+    if (node instanceof HTMLScriptElement) {
+      void getFeatureSettings().then((settings) => {
+        if (settings.trackingPrevention) checkScript(node);
+      });
+    }
+    return originalAppendChild.call(this, node) as T;
+  };
+}
