@@ -1,3 +1,4 @@
+import { getFeatureSettings } from "../settings";
 const observedInputs = new WeakSet<HTMLInputElement>();
 const observedForms = new WeakSet<HTMLFormElement>();
 
@@ -222,6 +223,14 @@ const attachPasswordField = (input: HTMLInputElement) => {
 // -----------------------------
 //  Initialization
 // -----------------------------
-const scan = () => document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(attachPasswordField);
+const settings = await getFeatureSettings();
+
+const scan = () => {
+  if (!settings.passwordManager) {
+    return;
+  }
+  document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(attachPasswordField);
+}
+
 scan();
 new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
