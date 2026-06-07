@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FeatureTogglePanel } from "../ui/FeatureTogglePanel";
 import { getFeatureStats, FeatureStats, defaultFeatureStats, FEATURE_STATS_STORAGE_KEY } from "../stats";
+import { PasswordVault } from "../ui/PasswordVault";
 
 export function Options() {
   const [stats, setStats] = useState<FeatureStats>(defaultFeatureStats);
@@ -135,7 +136,26 @@ export function Options() {
           <FeatureTogglePanel />
         </section>
 
+        <section style={{ ...panelCardStyle, marginTop: "24px" }}>
+          <PasswordVault />
+        </section>
+
       </div>
     </div>
   );
 }
+
+const panelCardStyle = {
+  backgroundColor: "#ffffff", 
+  border: "1px solid #e2e8f0",
+  borderRadius: "8px", 
+  padding: "32px",
+  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+};
+
+const sectionHeaderStyle = {
+  fontSize: "18px", 
+  fontWeight: "600", 
+  marginBottom: "24px",
+  letterSpacing: "-0.01em"
+};
